@@ -14,7 +14,7 @@ import java.util.ArrayList;
 
 public class MainScene extends JPanel {
 
-    private String facebookURL;
+    private String facebookName;
     private JLabel originalLabel;
     private JLabel outputLabel;
     private JButton start;
@@ -34,15 +34,15 @@ public class MainScene extends JPanel {
         this.setLayout(null);
         this.setVisible(true);
 
-        JTextField usersInput = new JTextField("insert url");
+        JTextField usersInput = new JTextField("insert name");
         usersInput.setBounds(width/2-TEXT_FIELD_WIDTH/2,0,TEXT_FIELD_WIDTH,TEXT_FIELD_HEIGHT);
         this.add(usersInput);
 
         placeButtons();
 
         start.addActionListener((event) -> {
-            facebookURL = usersInput.getText();
-            getImage(facebookURL);
+            facebookName = usersInput.getText();
+            getImage(facebookName);
 
             placePics(FIRST_TIME);
 
@@ -277,7 +277,7 @@ public class MainScene extends JPanel {
 
     }
 
-    public String getImage(String facebookUrl) {
+    public String getImage(String facebookName) {
 
         try {
             System.setProperty("webdriver.chrome.driver", "C:\\Users\\Yotam\\Downloads\\chromedriver_win32\\chromedriver.exe");
@@ -286,14 +286,32 @@ public class MainScene extends JPanel {
             options.addArguments("user-data-dir=C:\\Users\\Yotam\\AppData\\Local\\Google\\Chrome\\User Data\\Profile 1");
             ChromeDriver driver = new ChromeDriver(options);
 
-            driver.get(facebookUrl);
+            driver.get("https://he-il.facebook.com/");
             driver.manage().window().maximize();
+            Thread.sleep(5000);
 
-            ArrayList<WebElement> pictureElements = (ArrayList<WebElement>) driver.findElements(By.tagName("image"));
-            WebElement pictureElement = pictureElements.get(0);
-            String picturePath = pictureElement.getAttribute("xlink:href");
+            WebElement search = driver.findElement(By.cssSelector("input[type=\"search\"]"));
+            search.sendKeys(facebookName);
 
+            Thread.sleep(5000);
+            WebElement search2 = driver.findElement(By.id(facebookName));
+            search2.click();
+
+            Thread.sleep(5000);
+            WebElement person = driver.findElement(By.cssSelector("a[role=\"presentation\"]"));
+            person.click();
+
+            Thread.sleep(5000);
+
+            WebElement pictureElement = driver.findElement(By.cssSelector("image[style=\"height: 168px; width: 168px;\"]"));
+            pictureElement.click();
+
+            Thread.sleep(5000);
+
+            WebElement picture = driver.findElement(By.cssSelector("img[data-visualcompletion=\"media-vc-image\"]"));
+            String picturePath = picture.getAttribute("src");
             saveImage(picturePath,IMAGE_PATH);
+            resize(IMAGE_PATH,0.35);
 
             driver.close();
         } catch (Exception e) {
@@ -302,6 +320,34 @@ public class MainScene extends JPanel {
 
 
         return "";
+    }
+
+    public static void resize(String outputImagePath, int scaledWidth, int scaledHeight)
+            throws IOException {
+        File inputFile = new File(IMAGE_PATH);
+        BufferedImage inputImage = ImageIO.read(inputFile);
+
+        BufferedImage outputImage = new BufferedImage(scaledWidth, scaledHeight, inputImage.getType());
+
+        Graphics2D g2d = outputImage.createGraphics();
+        g2d.drawImage(inputImage, 0, 0, scaledWidth, scaledHeight, null);
+        g2d.dispose();
+
+
+        String formatName = outputImagePath.substring(outputImagePath
+                .lastIndexOf(".") + 1);
+
+
+        ImageIO.write(outputImage, formatName, new File(IMAGE_PATH));
+    }
+
+
+    public static void resize(String inputImagePath, double percent) throws IOException {
+        File inputFile = new File(inputImagePath);
+        BufferedImage inputImage = ImageIO.read(inputFile);
+        int scaledWidth = (int) (inputImage.getWidth() * percent);
+        int scaledHeight = (int) (inputImage.getHeight() * percent);
+        resize(IMAGE_PATH, scaledWidth, scaledHeight);
     }
 
 
